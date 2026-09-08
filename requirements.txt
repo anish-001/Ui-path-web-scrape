@@ -1,0 +1,8 @@
+# Core dependencies for scraping and data processing
+certifi>=2024.2.2
+pandas>=2.0.0
+tqdm>=4.66.0
+
+# Optional Reddit API dependency (if running reddit_api_collector.py)
+praw>=7.7.1
+python-dotenv>=1.0.0

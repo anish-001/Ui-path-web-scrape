@@ -1,0 +1,9 @@
+theme_id,theme_name,post_level_count,post_level_percent,topic_level_count,topic_level_percent,relevant_topic_count,relevant_topic_percent,direct_migration_topic_count,direct_migration_topic_percent
+T1,UI / selector breakage,36,29.5,12,32.4,12,34.3,6,25.0
+T2,Data model / transaction change,40,32.8,20,54.1,20,57.1,9,37.5
+T3,Auth / landscape / access,17,13.9,10,27.0,9,25.7,5,20.8
+T4,Timing / reliability,19,15.6,12,32.4,12,34.3,7,29.2
+T5,Adaptation method,40,32.8,26,70.3,26,74.3,18,75.0
+T6,Governance / change management,13,10.7,9,24.3,9,25.7,5,20.8
+T7,Business impact,19,15.6,19,51.4,19,54.3,13,54.2
+T8,Strategy decision,27,22.1,13,35.1,13,37.1,12,50.0

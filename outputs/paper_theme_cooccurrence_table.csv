@@ -1,0 +1,29 @@
+theme_a,theme_b,topic_count,topic_percent
+Data model / transaction change,Adaptation method,16,43.2
+Adaptation method,Business impact,16,43.2
+Timing / reliability,Adaptation method,11,29.7
+UI / selector breakage,Data model / transaction change,10,27.0
+UI / selector breakage,Adaptation method,10,27.0
+Adaptation method,Strategy decision,10,27.0
+Data model / transaction change,Business impact,10,27.0
+Auth / landscape / access,Adaptation method,9,24.3
+Auth / landscape / access,Business impact,9,24.3
+Timing / reliability,Business impact,9,24.3
+Data model / transaction change,Timing / reliability,8,21.6
+Adaptation method,Governance / change management,8,21.6
+Data model / transaction change,Auth / landscape / access,8,21.6
+Business impact,Strategy decision,8,21.6
+Governance / change management,Business impact,7,18.9
+Data model / transaction change,Governance / change management,7,18.9
+UI / selector breakage,Business impact,6,16.2
+Timing / reliability,Strategy decision,5,13.5
+UI / selector breakage,Governance / change management,4,10.8
+UI / selector breakage,Strategy decision,4,10.8
+Data model / transaction change,Strategy decision,4,10.8
+Auth / landscape / access,Governance / change management,4,10.8
+UI / selector breakage,Auth / landscape / access,4,10.8
+Auth / landscape / access,Timing / reliability,4,10.8
+Timing / reliability,Governance / change management,4,10.8
+Governance / change management,Strategy decision,3,8.1
+UI / selector breakage,Timing / reliability,3,8.1
+Auth / landscape / access,Strategy decision,2,5.4

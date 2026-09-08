@@ -1,74 +1,75 @@
-# RPA Bot Adaptation after SAP S/4HANA Migration
+# What Breaks RPA Bots When SAP Upgrades? (SAP S/4HANA Migration Study)
 
-A Python scraping, thematic coding, and empirical data pipeline investigating how Robotic Process Automation (UiPath) bots break when enterprises migrate from legacy SAP ECC to SAP S/4HANA, the operational challenges that follow, and how automations can be designed for long-term stability.
-
----
-
-## Overview & Core Problem
-
-When organizations upgrade their enterprise ERP system from SAP ECC to S/4HANA, existing RPA bots frequently fail because the underlying interface, security, and data layers undergo major structural transformations:
-
-* **User Interface & Selector Shifts:** Classic desktop WinGUI screens are replaced by web-based SAP Fiori applications that generate dynamic SAPUI5 DOM element IDs (`__xmlview3--...`), causing hardcoded UI selectors (`aaname`, `id`) to fail.
-* **Transaction & Process Changes:** Legacy transaction codes (e.g., `XD01`, `XK01`) are deprecated and rerouted into the unified Business Partner (`BP`) model; scheduled `SM37` batch processing is replaced by synchronous real-time posting.
-* **Security & Scripting Parameters:** SAP Basis administrators often reset server-side scripting parameters (`sapgui/user_scripting = FALSE` in transaction `RZ11`) during server reprovisioning, disabling unattended bots overnight.
-* **Database & Concurrency Bottlenecks:** Direct SQL extractions break as legacy transparent tables (`BSEG`, `BSIS`) are consolidated into the Universal Journal (`ACDOCA`); parallel bots encounter database lock collisions (`FOREIGN_LOCK`).
-
-Because corporate whitepapers rarely document production failures, this repository provides **real incident case studies** paired with an **automated forum scraping pipeline** of the UiPath Community Forum to analyze these issues at scale.
+A simple Python data pipeline that analyzes real-world discussions from the UiPath Community Forum to find out **why software bots break when companies upgrade to SAP S/4HANA**, and how engineers fix them.
 
 ---
 
-## Reader's Guide: What Data Are You Looking At & Why?
+## The Problem in Plain English
 
-This repository contains **datasets, coding matrices, and statistical tables** organized across three complementary tiers:
+Many companies rely on **Robotic Process Automation (RPA)** bots—like UiPath—to automate repetitive tasks in SAP (such as entering invoices, processing orders, and pulling reports). 
+
+When these companies upgrade from older SAP (ECC) to modern SAP (S/4HANA), **their bots suddenly break**. Here is why:
+
+1. **Buttons & Screens Move:** Older desktop screens are replaced with modern web apps (SAP Fiori). Buttons, input fields, and menus change position or code, so bots click on empty space.
+2. **Old Shortcuts Disappear:** Classic transaction shortcuts are retired or merged into new screens, so the bot's navigation paths fail.
+3. **Bots Get Locked Out:** Security settings and scripting permissions are often reset during the upgrade, blocking bots from logging in.
+4. **Underlying Data Changes:** SAP changes its database tables and APIs. If a bot expects data in an old format, it crashes or pulls blank fields.
+
+Because companies rarely publish their internal bot failures, this project looks at **real developer discussions on the UiPath Community Forum** to uncover the most common points of failure and what it takes to fix them.
+
+---
+
+## What Data Are You Looking At & Why?
+
+All data is stored in the `outputs/` folder, organized into three simple stages:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                WHAT DATA YOU ARE LOOKING AT & WHY                                │
-├────────────────────────────────┬────────────────────────────────┬────────────────────────────────┤
-│ 1. QUALITATIVE GROUND TRUTH    │ 2. COMMUNITY SCOPE & EVIDENCE  │ 3. QUANTITATIVE PROOF          │
-│                                │                                │                                │
-│ UI_Path_Cases.csv              │ uipath_forum_posts.csv         │ paper_theme_frequency_         │
-│ • WHAT: 15 real incident cases │ • WHAT: 122+ raw forum posts   │   table.csv                    │
-│   from production migrations.  │   from real RPA developers.    │ • WHAT: Hard percentages &     │
-│ • WHY: Gives exact error logs, │ • WHY: Proves the 15 cases     │   occurrence counts.           │
-│   quotes, and verified fixes   │   aren't isolated; validates   │ • WHY: Statistically proves    │
-│   explaining HOW bots break.   │   completeness across industry.│   which problems dominate.     │
-│                                │                                │                                │
-│ rpa_s4hana_thematic_           │ uipath_forum_theme_            │ paper_theme_cooccurrence_      │
-│   codebook.csv                 │   matrix.csv                   │   table.csv                    │
-│ • WHAT: Coding definitions     │ • WHAT: Posts tagged with      │ • WHAT: Pairwise problem       │
-│   for themes T1 through T8.    │   T1-T8 + SAP entity flags.    │   correlation matrix.          │
-│ • WHY: Standardizes analysis;  │ • WHY: Converts unstructured   │ • WHY: Proves how UI breaks    │
-│   makes coding auditable.      │   text into research data.     │   trigger adaptation blowouts. │
-└────────────────────────────────┴────────────────────────────────┴────────────────────────────────┘
+├────────────────────────────────────────────────┬─────────────────────────────────────────────────┤
+│ STAGE 1: THE INPUTS                            │ STAGE 3: THE FINAL RESULTS                      │
+│                                                │                                                 │
+│ uipath_forum_posts.csv (and .jsonl)            │ paper_theme_frequency_table.csv                 │
+│ • WHAT: Raw forum posts from real developers.  │ • WHAT: Percentage breakdown of problems.       │
+│ • WHY: Real-world evidence of where bots break.│ • WHY: Shows which failure types happen most.   │
+│                                                │                                                 │
+│ rpa_s4hana_thematic_codebook.csv               │ paper_theme_cooccurrence_table.csv              │
+│ • WHAT: A rulebook of keywords to look for.    │ • WHAT: Which problems happen together.         │
+│ • WHY: Tells the script how to classify bugs.  │ • WHY: Shows how small UI bugs compound into    │
+│                                                │   major rework for engineering teams.           │
+├────────────────────────────────────────────────┴─────────────────────────────────────────────────┤
+│ STAGE 2: INTERMEDIATE MATH (BEHIND-THE-SCENES)                                                   │
+│                                                                                                  │
+│ • uipath_forum_theme_matrix.csv: Posts marked with 1 or 0 when keywords match.                   │
+│ • paper_topic_level_quantitative_data.csv: Replies grouped back into full conversation threads.  │
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Detailed File Guide
+### Quick Guide to Every File
 
-| File Name | What Data You Are Looking At | Why This Data Exists |
+| File Name | What It Is | Why It Matters |
 | :--- | :--- | :--- |
-| **`outputs/UI_Path_Cases.csv`** | **15 Curated Incident Case Studies:** Real failure post-mortems from `forum.uipath.com`, complete with thread URLs, failure categories, developer quotes, and verified resolutions. | **Qualitative Ground Truth:** Shows the exact technical root causes (e.g., `aaname` attribute disappearance, `SAP_NCo` connector hangs, `RZ11` parameter resets) and verified workarounds implemented by practitioners. |
-| **`outputs/uipath_forum_posts.csv`** | **Raw Forum Discussion Corpus:** Unfiltered post text, engagement stats (`views`, `replies`), timestamps, and hashed author handles extracted directly from the UiPath Community Forum via Discourse API. | **Validates Completeness:** Ensures case studies represent widespread industry reality rather than isolated edge cases. |
-| **`outputs/uipath_forum_theme_matrix.csv`** | **Thematic Feature Matrix:** The post corpus enriched with word counts, technology flags (`mentions_fiori`, `mentions_sap_gui`), and binary indicators (`1` or `0`) for the 8 research themes ($T1$–$T8$). | **The Quantitative Bridge:** Translates qualitative human dialogue into structured binary variables so failure modes can be statistically evaluated. |
-| **`outputs/paper_topic_level_quantitative_data.csv`** | **Thread-Level Aggregation:** Multi-turn replies rolled up by discussion topic (`topic_id`), tagged with relevance scores (0 = irrelevant, 1 = general, 2 = technical, 3 = direct migration). | **Preserves Conversational Context:** Analyzes entire threads as single units so opening symptoms, peer diagnoses, and accepted solutions remain linked. |
-| **`outputs/paper_theme_frequency_table.csv`** | **Theme Prevalence Table:** Statistical breakdown showing the exact count and percentage share of each theme ($T1$–$T8$) across posts and topics. | **Statistical Proof:** Quantifies which failure categories dominate (e.g., proving that UI/Selector Breakage and Data Model Changes account for over **60%** of all discussed migration issues). |
-| **`outputs/paper_theme_cooccurrence_table.csv`** | **Problem Correlation Matrix:** 2-way matrix measuring which failure themes appear together in the same discussion threads. | **Proves Compounding Issues:** Measures how problems trigger each other (e.g., showing that superficial UI breakages $T1$ co-occur with major adaptation efforts $T5$ in **68%** of cases). |
-| **`outputs/rpa_s4hana_thematic_codebook.csv`** | **The Thematic Codebook:** Standard definitions, inclusion/exclusion rules, and example keywords for themes $T1$ through $T8$. | **Auditability & Standards:** Provides the exact rules used to classify and code the data. |
+| **`outputs/uipath_forum_posts.csv`** | **Raw Forum Posts:** The unedited text, dates, views, and replies downloaded from the UiPath Community Forum. | Gives us the raw, unfiltered proof of real problems faced by developers. |
+| **`outputs/rpa_s4hana_thematic_codebook.csv`** | **The Rulebook:** Definitions and search keywords for the 8 problem categories ($T1$ through $T8$). | Tells our Python script what words mean what problem. |
+| **`outputs/uipath_forum_theme_matrix.csv`** | **Tagged Posts (Intermediate):** The forum posts with `1` or `0` checkmarks for each matched problem keyword. | Converts human chat into numbers so we can do statistics. |
+| **`outputs/paper_topic_level_quantitative_data.csv`** | **Thread Summary (Intermediate):** Groups replies together into complete conversation threads. | Keeps bug reports, troubleshooting, and final solutions linked together. |
+| **`outputs/paper_theme_frequency_table.csv`** | **Problem Scorecard (Final):** The total count and percentage of discussions for each problem type. | Proves which issues are most common (e.g., UI breaks account for over 50% of complaints). |
+| **`outputs/paper_theme_cooccurrence_table.csv`** | **Problem Pairs (Final):** Shows which problems tend to occur in the exact same discussion. | Proves that superficial UI errors quickly trigger major redevelopment work. |
 
 ---
 
-## The 8 Thematic Codes (T1–T8)
+## The 8 Problem Themes We Track (T1–T8)
 
-| Code | Construct Name | What It Tracks in the Data |
-|---|---|---|
-| **T1** | **UI & Selector Breakage** | Dynamic UI5 DOM IDs, Belize/Quartz theme shifts, and missing selector attributes. |
-| **T2** | **Data Model & Transaction Change** | Deprecated T-codes (`XD01`/`XK01`), consolidated tables (`ACDOCA`), and API shifts. |
-| **T3** | **Auth, Landscape & Access** | Basis security parameters (`RZ11`), missing authorizations, SSO, and environment mismatches. |
-| **T4** | **Timing & Reliability** | Execution timeouts, elimination of batch windows, and database lock collisions (`FOREIGN_LOCK`). |
-| **T5** | **Adaptation Method** | Concrete engineering fixes: switching to BAPIs/OData, fuzzy selectors, workflow redesigns, and test suites. |
-| **T6** | **Governance & Change Mgmt** | CoE policies, UAT validation signoffs, change freezes, bot inventories, and hypercare. |
-| **T7** | **Business Impact** | Operational consequences: rework hours, downtime, order backlogs, and temporary staffing. |
-| **T8** | **Strategy Decision** | Strategic triage: decisions to retire, rebuild via APIs, or patch existing UI workflows. |
+| Code | Problem Category | Plain-English Meaning |
+| :--- | :--- | :--- |
+| **T1** | **Buttons & Screens Changed** | Screen layouts changed or buttons moved, so the bot cannot find where to click. |
+| **T2** | **Backend / Database Changed** | SAP changed an old transaction code or database table, breaking bot data lookups. |
+| **T3** | **Bot Got Locked Out** | Single Sign-On (SSO), passwords, or user permissions broke during the migration. |
+| **T4** | **Timeouts & Freezing** | SAP runs slower or faster than expected, causing the bot to freeze or time out. |
+| **T5** | **How Developers Fixed It** | The actual technical fixes: switching to APIs, updating selectors, or rewriting scripts. |
+| **T6** | **Team Coordination** | Testing schedules, project sign-offs, and coordination between SAP and RPA teams. |
+| **T7** | **Business Damage** | The real-world consequences: invoice backlogs, bot downtime, and lost hours. |
+| **T8** | **Keep it or Kill it?** | Deciding whether to repair the old bot, rebuild it from scratch, or retire it. |
 
 ---
 
@@ -78,13 +79,16 @@ The files in `outputs/` are generated across four sequential stages:
 
 ```mermaid
 graph TD
-    A[forum.uipath.com] -->|src/uipath_forum_collector.py| B[outputs/uipath_forum_posts.csv]
-    B -->|src/prepare_theme_matrix.py| C[outputs/uipath_forum_theme_matrix.csv]
-    C -->|src/build_paper_quant_tables.py| D[outputs/paper_topic_level_quantitative_data.csv]
-    D --> E[outputs/paper_theme_frequency_table.csv]
-    D --> F[outputs/paper_theme_cooccurrence_table.csv]
-    G[UI_Path_Cases.csv] -.->|Qualitative ground truth| D
-    H[outputs/rpa_s4hana_thematic_codebook.csv] -.->|Codebook Definitions| C
+    A[forum.uipath.com<br/>UiPath Forum] -->|src/uipath_forum_collector.py| B[outputs/uipath_forum_posts.csv<br/>Raw Forum Posts]
+    
+    LR[Literature Review<br/>Prior Research] --> CB[outputs/rpa_s4hana_thematic_codebook.csv<br/>Rulebook / Keywords]
+
+    B -->|src/prepare_theme_matrix.py| C[outputs/uipath_forum_theme_matrix.csv<br/>Posts Tagged by Problem]
+    CB -.->|Keyword Rules| C
+
+    C -->|src/build_paper_quant_tables.py| D[outputs/paper_topic_level_quantitative_data.csv<br/>Thread Summary]
+    D --> E[outputs/paper_theme_frequency_table.csv<br/>Final: Problem Percentages]
+    D --> F[outputs/paper_theme_cooccurrence_table.csv<br/>Final: Problems Happening Together]
 ```
 
 ---
@@ -105,7 +109,6 @@ graph TD
 │   └── build_reddit_paper_quant_tables.py
 └── outputs/                     # Datasets, codebook, and dataset guide
     ├── README.md                       # Dedicated guide explaining all CSV tables & connections
-    ├── UI_Path_Cases.csv               # 15 qualitative incident case studies
     ├── uipath_forum_posts.csv          # Raw scraped forum posts
     ├── uipath_forum_theme_matrix.csv   # Thematic feature matrix (T1-T8)
     ├── paper_topic_level_quantitative_data.csv

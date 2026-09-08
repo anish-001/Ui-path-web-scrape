@@ -6,78 +6,72 @@ This folder contains the datasets, thematic coding matrices, and statistical tab
 
 ## 1. How the CSV Files Connect
 
-The files represent a 4-stage data pipeline, moving from **raw scraped forum posts** $\longrightarrow$ **thematic feature extraction** $\longrightarrow$ **thread-level aggregation** $\longrightarrow$ **final quantitative tables & case studies**:
-
 ```
-[ 1. RAW FORUM POSTS ]
-  uipath_forum_posts.csv (and .jsonl)
-  • Raw text, timestamps, engagement metrics, and hashed usernames.
-        │
-        ▼ (src/prepare_theme_matrix.py)
-[ 2. CODED THEMATIC MATRIX ]
-  uipath_forum_theme_matrix.csv
-  • Each post tagged with themes T1–T8 and SAP entity mention flags.
-        │
-        ▼ (src/build_paper_quant_tables.py)
-[ 3. TOPIC-LEVEL AGGREGATION ]
-  paper_topic_level_quantitative_data.csv
-  • Posts rolled up by topic_id; scored for S/4HANA migration relevance (0–3).
-        │
-        ├────────────────────────────────┬────────────────────────────────┐
-        ▼                                ▼                                ▼
-[ 4A. THEME FREQUENCIES ]       [ 4B. CO-OCCURRENCE ]           [ 4C. QUALITATIVE CASES ]
-  paper_theme_frequency_          paper_theme_                    UI_Path_Cases.csv
-  table.csv                       cooccurrence_table.csv          • 15 curated incident
-  • Prevalence % for              • Pairwise correlation            post-mortems with
-    themes T1 through T8.           matrix showing which            verbatim quotes and
-                                    problems compound.              verified fixes.
+[ 1A. RAW FORUM POSTS ]               [ 1B. KEYWORD RULES / CODEBOOK ]
+  uipath_forum_posts.csv (and .jsonl)   rpa_s4hana_thematic_codebook.csv
+  • What people wrote on the forum      • Rules and keywords derived from
+    (raw text, views, timestamps).        existing research (T1–T8).
+         │                                       │
+         └───────────────────┬───────────────────┘
+                             ▼ (src/prepare_theme_matrix.py)
+                   [ 2. TAGGED POSTS MATRIX ]
+                     uipath_forum_theme_matrix.csv
+                     • Raw posts tagged with 1 or 0
+                       when a keyword rule matches.
+                             │
+                             ▼ (src/build_paper_quant_tables.py)
+                   [ 3. THREAD-LEVEL SUMMARY ]
+                     paper_topic_level_quantitative_data.csv
+                     • All replies grouped back into single
+                       conversation threads.
+                             │
+                   ┌─────────┴─────────┐
+                   ▼                   ▼
+         [ 4A. FINAL PERCENTAGES ]   [ 4B. PROBLEMS TOGETHER ]
+           paper_theme_frequency_      paper_theme_cooccurrence_
+           table.csv                   table.csv
+           • What % of discussions     • Which problems happen at
+             complained about each       the exact same time
+             problem.                    (e.g., UI breaks + heavy rework).
 ```
 
 ---
 
 ## 2. What Every CSV File Means
 
-### Raw & Coded Post Data (Post Level)
-
+### Stage 1: The Inputs
 * **`uipath_forum_posts.csv` (and `.jsonl`)**
-  * **What it means:** The raw, unfiltered text of discussion posts scraped from the UiPath Community Forum via Discourse REST API.
-  * **Key Columns:** `topic_id`, `post_id`, `created_at`, `author_hash` (SHA-256 anonymized username), `views`, `reply_count`, `like_count`, `text`.
-  * **Purpose:** Acts as the primary empirical evidence base representing real-world developer discussions.
-
-* **`uipath_forum_theme_matrix.csv`**
-  * **What it means:** A 1-to-1 extension of `uipath_forum_posts.csv` with automated NLP keyword coding and technology tags added.
-  * **Key Columns:** All columns from above, plus `word_count`, `mentions_*` (`s4hana`, `fiori`, `sap_gui`, `uipath`), `T1_ui_selector_breakage` through `T8_strategy_decision` (binary `1` or `0`), and `suggested_theme_count`.
-  * **Purpose:** Converts unstructured human dialogue into structured binary variables for quantitative analysis.
-
----
-
-### Aggregated & Statistical Data (Topic & Corpus Level)
-
-* **`paper_topic_level_quantitative_data.csv`**
-  * **What it means:** Discussion posts aggregated into complete thread units, treating the entire multi-turn dialogue as a single unit of analysis.
-  * **Key Columns:** `topic_id`, `title`, `url`, `first_record_date`, `post_count_in_scrape`, `views`, `reply_count`, `relevance_score` (0 = off-topic, 1 = general context, 2 = technical context, 3 = direct migration), `relevance_category`, `active_themes`, `T1`..`T8`.
-  * **Purpose:** Preserves conversational context (from symptom to root-cause diagnosis to resolution) and filters out general forum chit-chat.
-
-* **`paper_theme_frequency_table.csv`**
-  * **What it means:** Macro summary table showing how frequently each theme appears across the corpus.
-  * **Key Columns:** `theme_id`, `theme_name`, `post_level_count`, `post_level_percent`, `topic_level_count`, `topic_level_percent`, `relevant_topic_count`, `relevant_topic_percent`, `direct_migration_topic_count`, `direct_migration_topic_percent`.
-  * **Purpose:** Provides hard statistical percentages for your paper (e.g., proving that UI Breakage and Data Model Changes account for over 60% of all migration discussions).
-
-* **`paper_theme_cooccurrence_table.csv`**
-  * **What it means:** A 2-way matrix measuring which failure themes appear together in the same discussions.
-  * **Key Columns:** `theme_a`, `theme_b`, `topic_count`, `topic_percent`.
-  * **Purpose:** Statistically proves compounding problems—such as demonstrating that superficial UI Breakage ($T1$) co-occurs with major Adaptation Effort ($T5$) in 68% of threads.
-
----
-
-### Qualitative & Methodological References
-
-* **`UI_Path_Cases.csv`**
-  * **What it means:** 15 curated incident vignettes from `forum.uipath.com` capturing specific real-world migration failures.
-  * **Key Columns:** `case_id`, `title`, `url`, `date_posted`, `replies`, `views`, `category`, `key_failure_mode`, `resolution`, `quote`.
-  * **Purpose:** Provides the qualitative ground truth, technical root causes (e.g., GUI 760 `aaname` breaks, `SAP_NCo` connector hangs, `RZ11` parameter resets), and verified developer fixes.
+  * **Plain English:** The raw messages and comments downloaded directly from the UiPath Community Forum.
+  * **What it has:** Post text, views, reply counts, dates, and anonymized user IDs.
+  * **Role:** The real-world evidence of developer discussions.
 
 * **`rpa_s4hana_thematic_codebook.csv`**
-  * **What it means:** The research codebook defining the rules and criteria for coding themes $T1$ through $T8$.
-  * **Key Columns:** `theme_id`, `theme_name`, `definition`, `include_when`, `exclude_when`, `example_indicators`, `quant_variables`.
-  * **Purpose:** Ensures academic rigor and auditability, allowing reviewers to verify the classification rules.
+  * **Plain English:** The rulebook (or dictionary) that defines what keywords to look for.
+  * **What it has:** Definitions and search keywords for each problem category ($T1$ through $T8$), derived from prior research.
+  * **Role:** Tells the computer *how* to categorize forum posts.
+
+---
+
+### Stage 2: Behind-the-Scenes Math (Intermediate)
+* **`uipath_forum_theme_matrix.csv`**
+  * **Plain English:** The raw messages with checkmarks (`1` or `0`) added whenever a keyword matched.
+  * **What it has:** Every post plus binary flags for $T1$ through $T8$ and mentions of SAP GUI or Fiori.
+  * **Role:** Intermediate spreadsheet that turns unstructured text into math.
+
+* **`paper_topic_level_quantitative_data.csv`**
+  * **Plain English:** Recombines back-and-forth replies into complete forum threads.
+  * **What it has:** One row per discussion thread, with overall relevance scores and active problem themes.
+  * **Role:** Intermediate calculation step to keep problem symptoms, diagnoses, and solutions linked together.
+
+---
+
+### Stage 3: Final Results (What Goes in Your Paper / Presentation)
+* **`paper_theme_frequency_table.csv`**
+  * **Plain English:** The scorecard showing what percentage of discussions complained about each problem.
+  * **What it has:** Total counts and percentages for each theme across all posts and topics.
+  * **Role:** The core statistics for your results section (e.g., UI Breakage is the #1 issue at over 50%).
+
+* **`paper_theme_cooccurrence_table.csv`**
+  * **Plain English:** The correlation card showing which problems trigger each other.
+  * **What it has:** Pairwise percentages showing how often Theme A and Theme B appear in the same thread.
+  * **Role:** Proves that superficial UI errors directly lead to major engineering adaptation efforts.

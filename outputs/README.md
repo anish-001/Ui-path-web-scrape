@@ -1,77 +1,53 @@
-# Dataset Guide: RPA Bot Adaptation after SAP S/4HANA Migration
+# Dataset guide
 
-This folder contains the datasets, thematic coding matrices, and statistical tables for the study on how SAP S/4HANA migrations impact Robotic Process Automation (UiPath) bot fleets.
+This folder contains the checked-in UiPath collection and the CSV files derived from it. The repository root [README.md](../README.md) is the source for collection decisions; this file is only a data dictionary and flow guide.
 
----
+Read the files from left to right. The raw files contain the source material; the matrix and tables organise it for review.
 
-## 1. How the CSV Files Connect
+## Data flow
 
 ```
-[ 1A. RAW FORUM POSTS ]               [ 1B. KEYWORD RULES / CODEBOOK ]
-  uipath_forum_posts.csv (and .jsonl)   rpa_s4hana_thematic_codebook.csv
-  • What people wrote on the forum      • Rules and keywords derived from
-    (raw text, views, timestamps).        existing research (T1–T8).
-         │                                       │
-         └───────────────────┬───────────────────┘
-                             ▼ (src/prepare_theme_matrix.py)
-                   [ 2. TAGGED POSTS MATRIX ]
-                     uipath_forum_theme_matrix.csv
-                     • Raw posts tagged with 1 or 0
-                       when a keyword rule matches.
-                             │
-                             ▼ (src/build_paper_quant_tables.py)
-                   [ 3. THREAD-LEVEL SUMMARY ]
-                     paper_topic_level_quantitative_data.csv
-                     • All replies grouped back into single
-                       conversation threads.
-                             │
-                   ┌─────────┴─────────┐
-                   ▼                   ▼
-         [ 4A. FINAL PERCENTAGES ]   [ 4B. PROBLEMS TOGETHER ]
-           paper_theme_frequency_      paper_theme_cooccurrence_
-           table.csv                   table.csv
-           • What % of discussions     • Which problems happen at
-             complained about each       the exact same time
-             problem.                    (e.g., UI breaks + heavy rework).
+uipath_forum_posts.csv / .jsonl
+        +
+rpa_s4hana_thematic_codebook.csv
+        │
+        ▼  src/prepare_theme_matrix.py
+uipath_forum_theme_matrix.csv
+        │
+        ▼  src/build_paper_quant_tables.py
+paper_topic_level_quantitative_data.csv
+paper_theme_frequency_table.csv
+paper_theme_cooccurrence_table.csv
 ```
 
----
+## Files
 
-## 2. What Every CSV File Means
+| File | Contents | Role |
+| :--- | :--- | :--- |
+| `uipath_forum_posts.csv` | One row per collected forum post. | Primary raw dataset. |
+| `uipath_forum_posts.jsonl` | The same raw records, one JSON object per line. | Record-preserving alternative to CSV. |
+| `rpa_s4hana_thematic_codebook.csv` | Theme IDs T1–T8, definitions, inclusion/exclusion guidance, example indicators, and intended variables. | Method reference for review and manual coding. |
+| `uipath_forum_theme_matrix.csv` | Raw post fields plus word counts, technology mentions, and binary keyword-suggestion columns for T1–T8. | Screening aid; the themes cover problems, responses, organisational context, impact, and decisions. Flags are not validated qualitative codes. |
+| `paper_topic_level_quantitative_data.csv` | One row per `topic_id`, with first-record date, collected-post count, heuristic relevance category, and topic-level theme flags. | Thread-level view of the collection. |
+| `paper_theme_frequency_table.csv` | Counts and percentages of theme flags at post and topic levels, including heuristic relevant subsets. | Derived descriptive table. |
+| `paper_theme_cooccurrence_table.csv` | Pairwise counts of themes appearing in the same topic-level record. | Derived descriptive table. |
 
-### Stage 1: The Inputs
-* **`uipath_forum_posts.csv` (and `.jsonl`)**
-  * **Plain English:** The raw messages and comments downloaded directly from the UiPath Community Forum.
-  * **What it has:** Post text, views, reply counts, dates, and anonymized user IDs.
-  * **Role:** The real-world evidence of developer discussions.
+## Field notes
 
-* **`rpa_s4hana_thematic_codebook.csv`**
-  * **Plain English:** The rulebook (or dictionary) that defines what keywords to look for.
-  * **What it has:** Definitions and search keywords for each problem category ($T1$ through $T8$), derived from prior research.
-  * **Role:** Tells the computer *how* to categorize forum posts.
+- The raw schema is: `source`, `query`, `topic_id`, `post_id`, `url`, `title`, `created_at`, `author_hash`, `reply_count`, `views`, `like_count`, and `text`.
+- `reply_count` and `views` are topic-level metadata repeated on each post. `like_count` is blank in the current snapshot because the source response did not provide values.
+- The current checked-in collection contains 122 posts across 37 topics. Two raw posts have blank text; inspect the raw record before treating that as missing evidence.
+- The topic table’s relevance score is generated by substring rules in `src/build_paper_quant_tables.py`; it is a triage field, not a manual inclusion decision.
+- The raw files retain the posts returned by the forum search. Relevance scores and theme flags are later screening labels; they do not remove records from the raw collection.
+- Theme flags are keyword matches in the title or text and require review against the codebook.
+- The `paper_*` names are historical output filenames. These are CSV artifacts; the default pipeline does not create a Markdown analysis report.
 
----
+## Rebuild
 
-### Stage 2: Behind-the-Scenes Math (Intermediate)
-* **`uipath_forum_theme_matrix.csv`**
-  * **Plain English:** The raw messages with checkmarks (`1` or `0`) added whenever a keyword matched.
-  * **What it has:** Every post plus binary flags for $T1$ through $T8$ and mentions of SAP GUI or Fiori.
-  * **Role:** Intermediate spreadsheet that turns unstructured text into math.
+From the repository root:
 
-* **`paper_topic_level_quantitative_data.csv`**
-  * **Plain English:** Recombines back-and-forth replies into complete forum threads.
-  * **What it has:** One row per discussion thread, with overall relevance scores and active problem themes.
-  * **Role:** Intermediate calculation step to keep problem symptoms, diagnoses, and solutions linked together.
+```bash
+python3 run_pipeline.py --step 2 3
+```
 
----
-
-### Stage 3: Final Results (What Goes in Your Paper / Presentation)
-* **`paper_theme_frequency_table.csv`**
-  * **Plain English:** The scorecard showing what percentage of discussions complained about each problem.
-  * **What it has:** Total counts and percentages for each theme across all posts and topics.
-  * **Role:** The core statistics for your results section (e.g., UI Breakage is the #1 issue at over 50%).
-
-* **`paper_theme_cooccurrence_table.csv`**
-  * **Plain English:** The correlation card showing which problems trigger each other.
-  * **What it has:** Pairwise percentages showing how often Theme A and Theme B appear in the same thread.
-  * **Role:** Proves that superficial UI errors directly lead to major engineering adaptation efforts.
+This rebuilds the derived files from the existing `uipath_forum_posts.csv`. To collect again, use the documented command and settings in the root README.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build paper-ready quantitative tables from Reddit theme-matrix CSV data."""
+"""Build quantitative tables from Reddit theme-matrix CSV data."""
 
 from __future__ import annotations
 

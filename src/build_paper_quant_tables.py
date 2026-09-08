@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build paper-ready quantitative tables from the UiPath forum CSV."""
+"""Build quantitative tables from the UiPath forum CSV."""
 
 from __future__ import annotations
 
@@ -14,7 +14,6 @@ MATRIX = OUT / "uipath_forum_theme_matrix.csv"
 TOPIC_TABLE = OUT / "paper_topic_level_quantitative_data.csv"
 THEME_TABLE = OUT / "paper_theme_frequency_table.csv"
 CO_TABLE = OUT / "paper_theme_cooccurrence_table.csv"
-REPORT = OUT / "paper_quantitative_results.md"
 
 THEMES = {
     "T1_ui_selector_breakage": "UI / selector breakage",
@@ -212,63 +211,6 @@ def main() -> None:
                     "topic_percent": round(count / total_topics * 100, 1),
                 }
             )
-
-    relevance_counts = Counter(row["relevance_category"] for row in topic_rows)
-    years = Counter(row["first_record_date"][:4] for row in topic_rows if row["first_record_date"])
-
-    lines = [
-        "# Paper-Ready Quantitative Results",
-        "",
-        "## Sample",
-        "",
-        f"The cleaned dataset contains {total_posts} forum records grouped into {total_topics} unique discussion topics. "
-        f"Using topic-level screening, {len(relevant_topics)} topics were classified as relevant SAP S/4HANA technical or migration-adaptation discussions, "
-        f"including {len(direct_topics)} direct migration/adaptation topics.",
-        "",
-        "## Relevance distribution by topic",
-        "",
-    ]
-    for category, count in relevance_counts.most_common():
-        lines.append(f"- {category}: {count} topics ({count / total_topics * 100:.1f}%)")
-
-    lines.extend(["", "## Theme frequency table", ""])
-    lines.append("| Theme | Post-level n (%) | Topic-level n (%) | Relevant topic n (%) | Direct migration topic n (%) |")
-    lines.append("|---|---:|---:|---:|---:|")
-    for theme, label in THEMES.items():
-        lines.append(
-            f"| {label} | {post_theme_counts[theme]} ({post_theme_counts[theme] / total_posts * 100:.1f}%) "
-            f"| {topic_theme_counts[theme]} ({topic_theme_counts[theme] / total_topics * 100:.1f}%) "
-            f"| {relevant_topic_theme_counts[theme]} ({(relevant_topic_theme_counts[theme] / len(relevant_topics) * 100) if relevant_topics else 0:.1f}%) "
-            f"| {direct_topic_theme_counts[theme]} ({(direct_topic_theme_counts[theme] / len(direct_topics) * 100) if direct_topics else 0:.1f}%) |"
-        )
-
-    lines.extend(["", "## Top co-occurrences at topic level", ""])
-    for (left, right), count in co_counts.most_common(8):
-        lines.append(f"- {THEMES[left]} + {THEMES[right]}: {count} topics ({count / total_topics * 100:.1f}%)")
-
-    lines.extend(["", "## Topic years", ""])
-    for year, count in sorted(years.items()):
-        lines.append(f"- {year}: {count} topics")
-
-    lines.extend(
-        [
-            "",
-            "## Short results paragraph",
-            "",
-            "The quantitative pilot analysis indicates that SAP S/4HANA-related RPA adaptation discussions are concentrated around technical redesign rather than simple bot maintenance. "
-            f"At the topic level, the most frequent themes were {THEMES[topic_theme_counts.most_common(1)[0][0]]}, "
-            f"{THEMES[topic_theme_counts.most_common(2)[1][0]]}, and {THEMES[topic_theme_counts.most_common(3)[2][0]]}. "
-            "The co-occurrence results show that adaptation methods frequently appear alongside UI/selector issues, transaction/API/data-model issues, and strategic decisions about whether to modify, rebuild, or replace existing automations. "
-            "This supports treating S/4HANA migration as an automation lifecycle and governance problem, not only as a narrow selector-repair problem.",
-            "",
-            "## Reporting caution",
-            "",
-            "These figures should be reported as a pilot quantitative content analysis of public forum discussions. The theme indicators are keyword-assisted and should be validated through manual coding before final publication.",
-        ]
-    )
-    REPORT.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(REPORT.resolve())
-
 
 if __name__ == "__main__":
     main()

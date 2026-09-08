@@ -4,15 +4,14 @@ run_pipeline.py
 ───────────────
 Master orchestrator for the RPA SAP S/4HANA Migration Thematic Analysis Pipeline.
 
-Executes the four pipeline steps in sequence:
+Executes the three pipeline steps in sequence:
   Step 1: Collect raw UiPath forum posts (src/uipath_forum_collector.py)
   Step 2: Generate 8-theme coding matrix (src/prepare_theme_matrix.py)
-  Step 3: Build paper-ready quantitative tables (src/build_paper_quant_tables.py)
-  Step 4: Compute dataset diagnostics and summary (src/analyze_csvs.py)
+  Step 3: Build quantitative tables (src/build_paper_quant_tables.py)
 
 Usage:
   python3 run_pipeline.py --all           # Execute full pipeline end-to-end
-  python3 run_pipeline.py --step 2 3 4    # Run analysis steps using existing scraped data
+  python3 run_pipeline.py --step 2 3      # Run processing steps using existing scraped data
   python3 run_pipeline.py --dry-run       # Print execution sequence without running
 """
 
@@ -31,7 +30,7 @@ PIPELINE_STEPS = [
         "step": 1,
         "name": "Forum Data Harvesting",
         "script": SRC_DIR / "uipath_forum_collector.py",
-        "args": ["--query", '"SAP S/4HANA" "UiPath"', "--pages", "5", "--delay", "1.0"],
+        "args": ["--queries", '"SAP S/4HANA" "UiPath"', "--pages", "5", "--delay", "1.0"],
         "expected_output": OUTPUTS_DIR / "uipath_forum_posts.csv",
         "description": "Harvests public topic threads from forum.uipath.com via Discourse JSON API."
     },
@@ -52,16 +51,8 @@ PIPELINE_STEPS = [
         "script": SRC_DIR / "build_paper_quant_tables.py",
         "args": [],
         "expected_output": OUTPUTS_DIR / "paper_theme_frequency_table.csv",
-        "description": "Rolls up posts into topic-level units and builds publication frequency/co-occurrence tables."
+        "description": "Rolls up posts into topic-level units and builds derived frequency/co-occurrence tables."
     },
-    {
-        "step": 4,
-        "name": "Dataset Diagnostics & Reporting",
-        "script": SRC_DIR / "analyze_csvs.py",
-        "args": [],
-        "expected_output": OUTPUTS_DIR / "csv_analysis_summary.md",
-        "description": "Calculates temporal spread, median word counts, and generates diagnostic markdown report."
-    }
 ]
 
 
@@ -103,20 +94,20 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__
     )
-    parser.add_argument("--all", action="store_true", help="Execute all pipeline steps (1-4)")
-    parser.add_argument("--step", type=int, nargs="+", choices=[1, 2, 3, 4], help="Run specific step numbers (e.g. --step 2 3 4)")
+    parser.add_argument("--all", action="store_true", help="Execute all pipeline steps (1-3)")
+    parser.add_argument("--step", type=int, nargs="+", choices=[1, 2, 3], help="Run specific step numbers (e.g. --step 2 3)")
     parser.add_argument("--dry-run", action="store_true", help="Display execution plan without running scripts")
     args = parser.parse_args()
 
     print_banner()
 
-    if not args.all and not args.step:
-        print("No execution flag provided. Use --all or --step [1 2 3 4].")
+    if not args.all and not args.step and not args.dry_run:
+        print("No execution flag provided. Use --all or --step [1 2 3].")
         print("Run with -h for help.\n")
         parser.print_help()
         sys.exit(0)
 
-    selected_steps = [1, 2, 3, 4] if args.all else sorted(args.step)
+    selected_steps = [1, 2, 3] if (args.all or (args.dry_run and not args.step)) else sorted(args.step)
 
     print(f"Plan: Running step(s) {selected_steps}")
     start_total = time.time()

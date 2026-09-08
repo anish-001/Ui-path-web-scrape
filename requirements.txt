@@ -1,8 +1,7 @@
-# Core dependencies for scraping and data processing
+# Core SSL certificate bundle for forum API requests
 certifi>=2024.2.2
+
+# Optional analysis and environment tooling
 pandas>=2.0.0
 tqdm>=4.66.0
-
-# Optional Reddit API dependency (if running reddit_api_collector.py)
-praw>=7.7.1
 python-dotenv>=1.0.0

@@ -5,10 +5,10 @@ run_pipeline.py
 Master orchestrator for the RPA SAP S/4HANA Migration Thematic Analysis Pipeline.
 
 Executes the four pipeline steps in sequence:
-  Step 1: Collect raw UiPath forum posts (work/uipath_forum_collector.py)
-  Step 2: Generate 8-theme coding matrix (work/prepare_theme_matrix.py)
-  Step 3: Build paper-ready quantitative tables (work/build_paper_quant_tables.py)
-  Step 4: Compute dataset diagnostics and summary (work/analyze_csvs.py)
+  Step 1: Collect raw UiPath forum posts (src/uipath_forum_collector.py)
+  Step 2: Generate 8-theme coding matrix (src/prepare_theme_matrix.py)
+  Step 3: Build paper-ready quantitative tables (src/build_paper_quant_tables.py)
+  Step 4: Compute dataset diagnostics and summary (src/analyze_csvs.py)
 
 Usage:
   python3 run_pipeline.py --all           # Execute full pipeline end-to-end
@@ -23,14 +23,14 @@ import time
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent
-WORK_DIR = ROOT_DIR / "work"
+SRC_DIR = ROOT_DIR / "src"
 OUTPUTS_DIR = ROOT_DIR / "outputs"
 
 PIPELINE_STEPS = [
     {
         "step": 1,
         "name": "Forum Data Harvesting",
-        "script": WORK_DIR / "uipath_forum_collector.py",
+        "script": SRC_DIR / "uipath_forum_collector.py",
         "args": ["--query", '"SAP S/4HANA" "UiPath"', "--pages", "5", "--delay", "1.0"],
         "expected_output": OUTPUTS_DIR / "uipath_forum_posts.csv",
         "description": "Harvests public topic threads from forum.uipath.com via Discourse JSON API."
@@ -38,7 +38,7 @@ PIPELINE_STEPS = [
     {
         "step": 2,
         "name": "Thematic Matrix Feature Extraction",
-        "script": WORK_DIR / "prepare_theme_matrix.py",
+        "script": SRC_DIR / "prepare_theme_matrix.py",
         "args": [
             "--input", str(OUTPUTS_DIR / "uipath_forum_posts.csv"),
             "--output", str(OUTPUTS_DIR / "uipath_forum_theme_matrix.csv")
@@ -49,7 +49,7 @@ PIPELINE_STEPS = [
     {
         "step": 3,
         "name": "Topic Aggregation & Quantitative Tables",
-        "script": WORK_DIR / "build_paper_quant_tables.py",
+        "script": SRC_DIR / "build_paper_quant_tables.py",
         "args": [],
         "expected_output": OUTPUTS_DIR / "paper_theme_frequency_table.csv",
         "description": "Rolls up posts into topic-level units and builds publication frequency/co-occurrence tables."
@@ -57,7 +57,7 @@ PIPELINE_STEPS = [
     {
         "step": 4,
         "name": "Dataset Diagnostics & Reporting",
-        "script": WORK_DIR / "analyze_csvs.py",
+        "script": SRC_DIR / "analyze_csvs.py",
         "args": [],
         "expected_output": OUTPUTS_DIR / "csv_analysis_summary.md",
         "description": "Calculates temporal spread, median word counts, and generates diagnostic markdown report."

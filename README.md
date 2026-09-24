@@ -50,9 +50,9 @@ Filtering happens in four stages:
 
 The default pipeline has three stages:
 
-1. `src/uipath_forum_collector.py` retrieves public forum topics and posts into `outputs/uipath_forum_posts.csv` and `.jsonl`.
-2. `src/prepare_theme_matrix.py` adds technology mentions, word counts, and binary keyword-suggestion columns for themes T1–T8.
-3. `src/build_paper_quant_tables.py` groups posts by topic and writes the derived CSV tables.
+1. **Step 1 — Forum Data Harvesting** (`src/uipath_forum_collector.py`): collects raw UiPath forum posts via the Discourse JSON API and writes `outputs/uipath_forum_posts.csv` and `.jsonl`.
+2. **Step 2 — Thematic Matrix Feature Extraction** (`src/prepare_theme_matrix.py`): applies regex matching for themes T1–T8 and entity mention counts, producing `outputs/uipath_forum_theme_matrix.csv`.
+3. **Step 3 — Topic Aggregation & Quantitative Tables** (`src/build_paper_quant_tables.py`): rolls posts up to topic-level units and builds derived frequency/co-occurrence tables.
 
 `outputs/rpa_s4hana_thematic_codebook.csv` documents the intended theme definitions and inclusion/exclusion guidance. The executable keyword rules remain in `prepare_theme_matrix.py`.
 

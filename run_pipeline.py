@@ -5,7 +5,10 @@ run_pipeline.py
 Master orchestrator for the RPA SAP S/4HANA Migration Thematic Analysis Pipeline.
 
 Executes the three pipeline steps in sequence:
-  Collect raw UiPath forum posts (src/uipath_forum_collector.py)
+  Step 1: Collect raw UiPath forum posts (src/uipath_forum_collector.py)
+  Step 2: Generate the 8-theme coding matrix (src/prepare_theme_matrix.py)
+  Step 3: Build quantitative tables (src/build_paper_quant_tables.py)
+
 Usage:
   python3 run_pipeline.py --all           # Execute full pipeline end-to-end
   python3 run_pipeline.py --step 2 3      # Run processing steps using existing scraped data

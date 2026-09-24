@@ -28,14 +28,13 @@ PIPELINE_STEPS = [
         "name": "Forum Data Harvesting",
         "script": SRC_DIR / "uipath_forum_collector.py",
         "args": [
-            "--queries", '"SAP S/4HANA" "UiPath"',
             "--pages", "5",
             "--delay", "1.0"
         ],
         "expected_output": OUTPUTS_DIR / "uipath_forum_posts.csv",
         "description": (
             "Harvests public topic threads from forum.uipath.com "
-            "via the Discourse JSON API."
+            "via the Discourse JSON API using predefined search queries."
         )
     },
 ]
